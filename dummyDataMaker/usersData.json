@@ -1,0 +1,14 @@
+[
+   {
+      "name": "Admin Warung",
+      "username": "admin",
+      "password": "admin123",
+      "role": "superadmin"
+   },
+   {
+      "name": "Kasir Satu",
+      "username": "kasir1",
+      "password": "kasir123",
+      "role": "admin"
+   }
+]

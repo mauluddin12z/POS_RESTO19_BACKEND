@@ -1,0 +1,12 @@
+[
+   {
+      "saleId": 1,
+      "amountPaid": 25000,
+      "changeReturned": 3000
+   },
+   {
+      "saleId": 2,
+      "amountPaid": 30000,
+      "changeReturned": 5000
+   }
+]
