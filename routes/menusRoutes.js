@@ -6,13 +6,15 @@ import {
    getMenus,
    updateMenu,
 } from "../controllers/menusController.js";
+import { verifyToken } from "../middlewares/verifyToken.js";
+import { isSuperAdmin } from "../middlewares/authorizeRole.js";
 
 const router = express.Router();
 
-router.get("/menus", getMenus);
-router.get("/menu/:menuId", getMenuById);
-router.post("/menu", createMenu);
-router.patch("/menu/:menuId", updateMenu);
-router.delete("/menu/:menuId", deleteMenu);
+router.get("/menus", verifyToken, getMenus);
+router.get("/menu/:menuId", verifyToken, getMenuById);
+router.post("/menu", verifyToken, isSuperAdmin, createMenu);
+router.patch("/menu/:menuId", verifyToken, isSuperAdmin, updateMenu);
+router.delete("/menu/:menuId", verifyToken, isSuperAdmin, deleteMenu);
 
 export default router;

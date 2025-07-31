@@ -1,17 +1,54 @@
 import Users from "../models/usersModel.js";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import messages from "../utils/messages.js";
 import { handleServerError } from "../utils/errorHandler.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret"; // simpan di .env
+// Get all users
+export const getUsers = async (req, res) => {
+   try {
+      const users = await Users.findAll({
+         attributes: ["userId", "name", "username", "role", "createdAt"],
+         order: [["createdAt", "DESC"]],
+      });
+      res.status(200).json({
+         code: messages.HTTP_STATUS.OK.code,
+         message: messages.HTTP_STATUS.OK.message,
+         data: users,
+      });
+   } catch (error) {
+      handleServerError(error, res);
+   }
+};
 
-// Register new user
-export const registerUser = async (req, res) => {
+// Get user by ID
+export const getUserById = async (req, res) => {
+   try {
+      const { userId } = req.params;
+      const user = await Users.findByPk(userId, {
+         attributes: ["userId", "name", "username", "role", "createdAt"],
+      });
+
+      if (!user) {
+         return res.status(404).json({
+            code: messages.HTTP_STATUS.NOT_FOUND.code,
+            message: "User not found",
+         });
+      }
+
+      res.status(200).json({
+         code: messages.HTTP_STATUS.OK.code,
+         message: messages.HTTP_STATUS.OK.message,
+         data: user,
+      });
+   } catch (error) {
+      handleServerError(error, res);
+   }
+};
+
+// Create a new user
+export const createUser = async (req, res) => {
    try {
       const { name, username, password, role } = req.body;
-
-      if (!username || !password || !role || !name) {
+      if (!name || !username || !password || !role) {
          return res.status(400).json({
             code: 400,
             message: "All fields are required",
@@ -27,7 +64,6 @@ export const registerUser = async (req, res) => {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-
       const user = await Users.create({
          name,
          username,
@@ -37,7 +73,7 @@ export const registerUser = async (req, res) => {
 
       res.status(201).json({
          code: 201,
-         message: "User registered successfully",
+         message: "User created successfully",
          data: {
             userId: user.userId,
             name: user.name,
@@ -50,42 +86,71 @@ export const registerUser = async (req, res) => {
    }
 };
 
-// Login user
-export const loginUser = async (req, res) => {
+// Update user by ID
+export const updateUser = async (req, res) => {
    try {
-      const { username, password } = req.body;
+      const { userId } = req.params;
+      const { name, username, password, role } = req.body;
 
-      const user = await Users.findOne({ where: { username } });
+      const user = await Users.findByPk(userId);
       if (!user) {
-         return res.status(401).json({
-            code: 401,
-            message: "Invalid credentials",
+         return res.status(404).json({
+            code: 404,
+            message: "User not found",
          });
       }
 
-      const match = await bcrypt.compare(password, user.password);
-      if (!match) {
-         return res.status(401).json({
-            code: 401,
-            message: "Invalid credentials",
-         });
+      // Check for duplicate username (if changed)
+      if (username && username !== user.username) {
+         const duplicate = await Users.findOne({ where: { username } });
+         if (duplicate) {
+            return res.status(409).json({ message: "Username already taken" });
+         }
       }
 
-      const token = jwt.sign(
-         { userId: user.userId, role: user.role },
-         JWT_SECRET,
-         { expiresIn: "1d" }
-      );
+      if (password) {
+         user.password = await bcrypt.hash(password, 10);
+      }
 
-      res.json({
+      user.name = name || user.name;
+      user.username = username || user.username;
+      user.role = role || user.role;
+
+      await user.save();
+
+      res.status(200).json({
          code: 200,
-         message: "Login successful",
-         token,
+         message: "User updated successfully",
          data: {
             userId: user.userId,
             name: user.name,
+            username: user.username,
             role: user.role,
          },
+      });
+   } catch (error) {
+      handleServerError(error, res);
+   }
+};
+
+// Delete user
+export const deleteUser = async (req, res) => {
+   try {
+      const { userId } = req.params;
+
+      const user = await Users.findByPk(userId);
+      if (!user) {
+         return res.status(404).json({
+            code: 404,
+            message: "User not found",
+         });
+      }
+
+      await user.destroy();
+
+      res.status(200).json({
+         code: 200,
+         message: "User deleted successfully",
       });
    } catch (error) {
       handleServerError(error, res);

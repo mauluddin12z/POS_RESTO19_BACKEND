@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import db from "../config/database.js";
+import { refreshToken } from "../controllers/authController.js";
 
 const usersModel = db.define(
    "users",
@@ -26,6 +27,10 @@ const usersModel = db.define(
          type: DataTypes.STRING,
          allowNull: false,
          defaultValue: "admin",
+      },
+      refreshToken: {
+         type: DataTypes.TEXT,
+         allowNull: true,
       },
    },
    {

@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
 import FileUpload from "express-fileupload";
+import db from "./config/database.js";
 import dotenv from "dotenv";
 dotenv.config();
-import db from "./config/database.js";
 
 import "./models/index.js";
 import categoriesRoutes from "./routes/categoriesRoutes.js";

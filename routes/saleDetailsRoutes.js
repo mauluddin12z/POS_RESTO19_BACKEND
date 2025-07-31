@@ -6,13 +6,14 @@ import {
    getSaleDetailById,
    updateSaleDetail,
 } from "../controllers/saleDetailsController.js";
+import { verifyToken } from "../middlewares/verifyToken.js";
 
 const router = express.Router();
 
-router.get("/sale-details", getSaleDetails);
-router.get("/sale-detail/:saleDetailId", getSaleDetailById);
-router.post("/sale-detail", createSaleDetail);
-router.patch("/sale-detail/:saleDetailId", updateSaleDetail);
-router.delete("/sale-detail/:saleDetailId", deleteSaleDetail);
+router.get("/sale-details",verifyToken, getSaleDetails);
+router.get("/sale-detail/:saleDetailId",verifyToken, getSaleDetailById);
+router.post("/sale-detail",verifyToken, createSaleDetail);
+router.patch("/sale-detail/:saleDetailId",verifyToken, updateSaleDetail);
+router.delete("/sale-detail/:saleDetailId",verifyToken, deleteSaleDetail);
 
 export default router;
