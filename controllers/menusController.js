@@ -156,7 +156,7 @@ export const createMenu = async (req, res) => {
             });
          }
          // Upload image to Cloudinary
-         menuImageUrl = await uploadImageToCloudinary(imageFile, "warung_19");
+         menuImageUrl = await uploadImageToCloudinary(imageFile, "resto_19");
       }
 
       // Create menu
@@ -232,7 +232,7 @@ export const updateMenu = async (req, res) => {
          }
          menu.menuImageUrl = await uploadImageToCloudinary(
             imageFile,
-            "warung_19"
+            "resto_19"
          );
       }
 
