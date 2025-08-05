@@ -12,25 +12,59 @@ import {
 } from "../utils/validation.js";
 import { Op } from "sequelize";
 
-// Get all menus
+// Utility: validate menu input fields
+const validateMenuInput = ({
+   menuName,
+   categoryId,
+   price,
+   stock,
+}) => {
+   const requiredFields = [
+      { value: menuName, name: "Menu name" },
+      { value: categoryId, name: "Category ID" },
+      { value: price, name: "Price" },
+      { value: stock, name: "Stock" },
+   ];
+   for (const field of requiredFields) {
+      const error = validateRequiredStringField(field.value, field.name);
+      if (error) return error;
+   }
+   return null;
+};
+
+// Get all menus with filtering, searching, sorting, pagination
 export const getMenus = async (req, res) => {
    try {
-      // Filtering parameters
-      const categoryId = req.query.categoryId;
-      const categoryName = req.query.categoryName;
-      const menuName = req.query.menuName;
-      const minPrice = parseFloat(req.query.minPrice);
-      const maxPrice = parseFloat(req.query.maxPrice);
-      const searchQuery = req.query.searchQuery;
+      const {
+         categoryId,
+         categoryName,
+         menuName,
+         minPrice,
+         maxPrice,
+         searchQuery,
+         page = 1,
+         pageSize = 10,
+         sortBy = "menuName",
+         sortOrder = "ASC",
+      } = req.query;
 
-      // Sorting parameters
-      const sortBy = req.query.sortBy || "menuName";
-      const sortOrder = req.query.sortOrder || "ASC";
+      const pageNum = parseInt(page, 10);
+      const size = parseInt(pageSize, 10);
+      const minP = parseFloat(minPrice);
+      const maxP = parseFloat(maxPrice);
 
-      // Build filter object based on query parameters
+      // Allowed sort fields whitelist to avoid SQL errors or injection
+      const allowedSortFields = ["menuName", "price", "stock"];
+      const sortField = allowedSortFields.includes(sortBy)
+         ? sortBy
+         : "menuName";
+      const orderDirection =
+         sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC";
+
       const filter = {};
+
       if (categoryId) {
-         filter["$categoryId$"] = categoryId;
+         filter["$category.categoryId$"] = categoryId;
       }
       if (categoryName) {
          filter["$category.categoryName$"] = categoryName;
@@ -38,66 +72,73 @@ export const getMenus = async (req, res) => {
       if (menuName) {
          filter.menuName = { [Op.like]: `%${menuName}%` };
       }
-      if (!isNaN(minPrice)) {
-         filter.price = { [Op.gte]: minPrice };
+
+      if (!isNaN(minP) || !isNaN(maxP)) {
+         filter.price = {};
+         if (!isNaN(minP)) filter.price[Op.gte] = minP;
+         if (!isNaN(maxP)) filter.price[Op.lte] = maxP;
       }
-      if (!isNaN(maxPrice)) {
-         filter.price = {
-            ...filter.price,
-            [Op.lte]: maxPrice,
-         };
-      }
-      // Build search query condition
+
+      // Build search condition
       const searchCondition = searchQuery
          ? {
               [Op.or]: [
                  { menuName: { [Op.like]: `%${searchQuery}%` } },
-                 {
-                    "$menus.menuDescription$": {
-                       [Op.like]: `%${searchQuery}%`,
-                    },
-                 },
+                 { menuDescription: { [Op.like]: `%${searchQuery}%` } },
               ],
            }
          : {};
 
-      // Find products with associated data and apply filtering, search, and sorting
-      const menus = await Menu.findAll({
+      const offset = (pageNum - 1) * size;
+
+      const { count, rows: menus } = await Menu.findAndCountAll({
          include: [
             {
                model: Category,
-               attributes: {
-                  exclude: ["categoryId", "createdAt", "updatedAt"],
-               },
+               attributes: { exclude: ["createdAt", "updatedAt"] },
             },
          ],
          where: {
             ...filter,
             ...searchCondition,
          },
-         order: [[sortBy, sortOrder]],
+         order: [[sortField, orderDirection]],
+         limit: size,
+         offset,
          subQuery: false,
       });
+
+      const totalPages = Math.ceil(count / size);
+      const hasNextPage = pageNum < totalPages;
 
       res.json({
          code: messages.HTTP_STATUS.OK.code,
          message: messages.HTTP_STATUS.OK.message,
          data: menus,
+         pagination: {
+            totalItems: count,
+            totalPages,
+            currentPage: pageNum,
+            pageSize: size,
+            hasNextPage,
+         },
       });
    } catch (error) {
       handleServerError(error, res);
    }
 };
 
-// Get a menu by ID
+// Get menu by ID with category included
 export const getMenuById = async (req, res) => {
    try {
       const { menuId } = req.params;
-      const menu = await Menu.findByPk(menuId);
+      const menu = await Menu.findByPk(menuId, {
+         include: [{ model: Category }],
+      });
       if (!menu) {
          return res.status(messages.HTTP_STATUS.NOT_FOUND.code).json({
             code: messages.HTTP_STATUS.NOT_FOUND.code,
-            message: messages.HTTP_STATUS.NOT_FOUND.message,
+            message: messages.x_not_found.replace("%{name}", "Menu"),
          });
       }
       res.json({
@@ -113,14 +154,25 @@ export const getMenuById = async (req, res) => {
 // Create a new menu
 export const createMenu = async (req, res) => {
    try {
-      // Extract data from request body and files
       const { menuName, menuDescription, categoryId, price, stock } = req.body;
       const imageFile = req.files ? req.files.menuImage : null;
 
-      // Check if menu already exists
-      const existingMenu = await Menu.findOne({
-         where: { menuName },
+      // Validate input fields
+      const validationError = validateMenuInput({
+         menuName,
+         categoryId,
+         price,
+         stock,
       });
+      if (validationError) {
+         return res.status(messages.HTTP_STATUS.BAD_REQUEST.code).json({
+            code: messages.HTTP_STATUS.BAD_REQUEST.code,
+            message: validationError,
+         });
+      }
+
+      // Check for duplicate menu name
+      const existingMenu = await Menu.findOne({ where: { menuName } });
       if (existingMenu) {
          return res.status(messages.HTTP_STATUS.CONFLICT.code).json({
             code: messages.HTTP_STATUS.CONFLICT.code,
@@ -128,38 +180,37 @@ export const createMenu = async (req, res) => {
          });
       }
 
-      // Validate menu name
-      const menuNameValidationError = validateRequiredStringField(
-         menuName,
-         "Menu name"
-      );
-      if (menuNameValidationError) {
+      // Optional: Validate category exists here (recommended)
+      const categoryExists = await Category.findByPk(categoryId);
+      if (!categoryExists) {
          return res.status(messages.HTTP_STATUS.BAD_REQUEST.code).json({
             code: messages.HTTP_STATUS.BAD_REQUEST.code,
-            message: menuNameValidationError,
+            message: `Category with ID ${categoryId} does not exist.`,
          });
       }
+
       let menuImageUrl = null;
+
       if (imageFile) {
-         // Validate image upload
+         // Validate image
          const maxImages = 1;
          const maxImageSize = 10 * 1024 * 1024;
-         const imageUploadValidationError = validateImageUpload(
+         const imageValidationError = validateImageUpload(
             imageFile,
             maxImages,
             maxImageSize
          );
-         if (imageUploadValidationError) {
+         if (imageValidationError) {
             return res.status(messages.HTTP_STATUS.BAD_REQUEST.code).json({
                code: messages.HTTP_STATUS.BAD_REQUEST.code,
-               message: imageUploadValidationError,
+               message: imageValidationError,
             });
          }
-         // Upload image to Cloudinary
+
+         // Upload to Cloudinary
          menuImageUrl = await uploadImageToCloudinary(imageFile, "resto_19");
       }
 
-      // Create menu
       const menu = await Menu.create({
          menuName,
          menuDescription,
@@ -169,19 +220,17 @@ export const createMenu = async (req, res) => {
          menuImageUrl,
       });
 
-      // Return success response
       res.status(messages.HTTP_STATUS.CREATED.code).json({
          code: messages.HTTP_STATUS.CREATED.code,
          message: messages.x_created_successfully.replace("%{name}", "Menu"),
          data: menu,
       });
    } catch (error) {
-      // Handle server errors
       handleServerError(error, res);
    }
 };
 
-// Update a menu by ID
+// Update menu by ID
 export const updateMenu = async (req, res) => {
    try {
       const { menuId } = req.params;
@@ -196,57 +245,79 @@ export const updateMenu = async (req, res) => {
          });
       }
 
-      // Check if menu with same menu_name exists
-      if (menuName && menuName !== menu.menuName) {
-         const existingMenu = await Menu.findOne({
-            where: { menuName },
-         });
+      // If updating menuName, check for duplicates and validate
+      if (menuName !== undefined && menuName !== menu.menuName) {
+         const existingMenu = await Menu.findOne({ where: { menuName } });
          if (existingMenu) {
             return res.status(messages.HTTP_STATUS.CONFLICT.code).json({
                code: messages.HTTP_STATUS.CONFLICT.code,
                message: messages.duplicate_name.replace("%{name}", "Menu"),
             });
          }
-         validateRequiredStringField(menuName, "Menu name");
+         const nameValidationError = validateRequiredStringField(
+            menuName,
+            "Menu name"
+         );
+         if (nameValidationError) {
+            return res.status(messages.HTTP_STATUS.BAD_REQUEST.code).json({
+               code: messages.HTTP_STATUS.BAD_REQUEST.code,
+               message: nameValidationError,
+            });
+         }
+         menu.menuName = menuName;
       }
 
-      // Validate image upload
+      // Validate other fields if provided
+      if (menuDescription !== undefined) {
+         menu.menuDescription = menuDescription;
+      }
+      if (categoryId !== undefined) {
+         // Validate category exists
+         const categoryExists = await Category.findByPk(categoryId);
+         if (!categoryExists) {
+            return res.status(messages.HTTP_STATUS.BAD_REQUEST.code).json({
+               code: messages.HTTP_STATUS.BAD_REQUEST.code,
+               message: `Category with ID ${categoryId} does not exist.`,
+            });
+         }
+         menu.categoryId = categoryId;
+      }
+      if (price !== undefined) {
+         menu.price = price;
+      }
+      if (stock !== undefined) {
+         menu.stock = stock;
+      }
+
+      // Handle image upload/update
       if (imageFile) {
          const maxImages = 1;
          const maxImageSize = 10 * 1024 * 1024;
-         const imageUploadValidationError = validateImageUpload(
+         const imageValidationError = validateImageUpload(
             imageFile,
             maxImages,
             maxImageSize
          );
-         if (imageUploadValidationError) {
+         if (imageValidationError) {
             return res.status(messages.HTTP_STATUS.BAD_REQUEST.code).json({
                code: messages.HTTP_STATUS.BAD_REQUEST.code,
-               message: imageUploadValidationError,
+               message: imageValidationError,
             });
          }
 
-         // Upload new image and delete old image if exists
+         // Delete old image if exists
          if (menu.menuImageUrl) {
             await deleteImageFromCloudinary(menu.menuImageUrl);
          }
+
          menu.menuImageUrl = await uploadImageToCloudinary(
             imageFile,
             "resto_19"
          );
       }
 
-      // Update menu properties
-      menu.menuName = menuName || menu.menuName;
-      menu.menuDescription = menuDescription || menu.menuDescription;
-      menu.categoryId = categoryId || menu.categoryId;
-      menu.price = price || menu.price;
-      menu.stock = stock || menu.stock;
-
-      // Save the updated menu
       await menu.save();
 
-      // Return success response
       res.status(messages.HTTP_STATUS.OK.code).json({
          code: messages.HTTP_STATUS.OK.code,
          message: messages.x_updated_successfully.replace("%{name}", "Menu"),
@@ -257,7 +328,7 @@ export const updateMenu = async (req, res) => {
    }
 };
 
-// Delete a menu by ID
+// Delete menu by ID
 export const deleteMenu = async (req, res) => {
    try {
       const { menuId } = req.params;
@@ -266,7 +337,7 @@ export const deleteMenu = async (req, res) => {
       if (!menu) {
          return res.status(messages.HTTP_STATUS.NOT_FOUND.code).json({
             code: messages.HTTP_STATUS.NOT_FOUND.code,
-            message: messages.HTTP_STATUS.NOT_FOUND.message,
+            message: messages.x_not_found.replace("%{name}", "Menu"),
          });
       }
 

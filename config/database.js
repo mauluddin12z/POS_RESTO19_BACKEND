@@ -6,4 +6,5 @@ const db = new Sequelize("resto_19", "root", "", {
    timezone: "+07:00",
 });
 
+
 export default db;

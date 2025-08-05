@@ -14,9 +14,6 @@ salesModel.belongsTo(usersModel, { foreignKey: "userId" });
 categoriesModel.hasMany(menusModel, { foreignKey: "categoryId" });
 menusModel.belongsTo(categoriesModel, { foreignKey: "categoryId" });
 
-// Menus - SaleDetails
-menusModel.hasMany(saleDetailsModel, { foreignKey: "menuId" });
-saleDetailsModel.belongsTo(menusModel, { foreignKey: "menuId" });
 
 // Sales - SaleDetails
 salesModel.hasMany(saleDetailsModel, { foreignKey: "saleId" });
@@ -25,6 +22,10 @@ saleDetailsModel.belongsTo(salesModel, { foreignKey: "saleId" });
 // Sales - PaymentLogs
 salesModel.hasOne(paymentLogsModel, { foreignKey: "saleId" });
 paymentLogsModel.belongsTo(salesModel, { foreignKey: "saleId" });
+
+// Sales - SaleDetails
+menusModel.hasMany(saleDetailsModel, { foreignKey: "menuId" });
+saleDetailsModel.belongsTo(menusModel, { foreignKey: "menuId" });
 
 // Export all the models
 export {

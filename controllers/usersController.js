@@ -43,6 +43,13 @@ export const getUserById = async (req, res) => {
       handleServerError(error, res);
    }
 };
+// Get user by ID
+export const getSession = async (req, res) => {
+   res.status(200).json({
+      loggedIn:true,
+      user:req.user
+   });
+};
 
 // Create a new user
 export const createUser = async (req, res) => {
