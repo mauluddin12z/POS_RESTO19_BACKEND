@@ -1,36 +1,37 @@
-import SaleDetail from "../models/saleDetailsModel.js";
+import OrderDetail from "../models/orderDetailsModel.js";
 import Menu from "../models/menusModel.js";
-import Sale from "../models/salesModel.js";
+
 import messages from "../utils/messages.js";
 import { handleServerError } from "../utils/errorHandler.js";
 import { validateRequiredField } from "../utils/validation.js";
+import Order from "../models/ordersModel.js";
 
-// Get all sale details
-export const getSaleDetails = async (req, res) => {
+// Get all order details
+export const getOrderDetails = async (req, res) => {
    try {
-      const saleDetails = await SaleDetail.findAll({
+      const orderDetails = await OrderDetail.findAll({
          include: [
-            { model: Sale },
+            { model: Order },
             { model: Menu, attributes: ["menuId", "name", "price"] },
          ],
-         order: [["saleDetailId", "DESC"]],
+         order: [["orderDetailId", "DESC"]],
       });
 
       res.json({
          code: messages.HTTP_STATUS.OK.code,
          message: messages.HTTP_STATUS.OK.message,
-         data: saleDetails,
+         data: orderDetails,
       });
    } catch (error) {
       handleServerError(error, res);
    }
 };
 
-// Get sale detail by ID
-export const getSaleDetailById = async (req, res) => {
+// Get order detail by ID
+export const getOrderDetailById = async (req, res) => {
    try {
-      const { saleDetailId } = req.params;
-      const detail = await SaleDetail.findByPk(saleDetailId, {
+      const { orderDetailId } = req.params;
+      const detail = await OrderDetail.findByPk(orderDetailId, {
          include: [{ model: Menu, attributes: ["menuId", "name", "price"] }],
       });
 
@@ -51,39 +52,40 @@ export const getSaleDetailById = async (req, res) => {
    }
 };
 
-// Create new sale detail
-export const createSaleDetail = async (req, res) => {
+// Create new order detail
+export const createOrderDetail = async (req, res) => {
    try {
-      const { saleId, menuId, quantity, price } = req.body;
+      const { orderId, menuId, quantity, price, notes } = req.body;
 
       // Validate required fields
-      const saleIdError = validateRequiredField(saleId, "Sale ID");
+      const orderIdError = validateRequiredField(orderId, "Order ID");
       const menuIdError = validateRequiredField(menuId, "Menu ID");
       const quantityError = validateRequiredField(quantity, "Quantity");
       const priceError = validateRequiredField(price, "Price");
 
-      if (saleIdError || menuIdError || quantityError || priceError) {
+      if (orderIdError || menuIdError || quantityError || priceError) {
          return res.status(messages.HTTP_STATUS.BAD_REQUEST.code).json({
             code: messages.HTTP_STATUS.BAD_REQUEST.code,
-            message: saleIdError || menuIdError || quantityError || priceError,
+            message: orderIdError || menuIdError || quantityError || priceError,
          });
       }
 
       const subtotal = price * quantity;
 
-      const detail = await SaleDetail.create({
-         saleId,
+      const detail = await OrderDetail.create({
+         orderId,
          menuId,
          quantity,
          price,
          subtotal,
+         notes,
       });
 
       res.status(messages.HTTP_STATUS.CREATED.code).json({
          code: messages.HTTP_STATUS.CREATED.code,
          message: messages.x_created_successfully.replace(
             "%{name}",
-            "Sale detail"
+            "Order detail"
          ),
          data: detail,
       });
@@ -92,13 +94,13 @@ export const createSaleDetail = async (req, res) => {
    }
 };
 
-// Update sale detail
-export const updateSaleDetail = async (req, res) => {
+// Update order detail
+export const updateOrderDetail = async (req, res) => {
    try {
-      const { saleDetailId } = req.params;
-      const { quantity, price } = req.body;
+      const { orderDetailId } = req.params;
+      const { quantity, price, notes } = req.body;
 
-      const detail = await SaleDetail.findByPk(saleDetailId);
+      const detail = await OrderDetail.findByPk(orderDetailId);
       if (!detail) {
          return res.status(messages.HTTP_STATUS.NOT_FOUND.code).json({
             code: messages.HTTP_STATUS.NOT_FOUND.code,
@@ -109,10 +111,12 @@ export const updateSaleDetail = async (req, res) => {
       // If either quantity or price is updated, subtotal should be recalculated
       const newQuantity = quantity ?? detail.quantity;
       const newPrice = price ?? detail.price;
+      const newNotes = notes ?? detail.notes;
 
       detail.quantity = newQuantity;
       detail.price = newPrice;
       detail.subtotal = newQuantity * newPrice;
+      detail.notes = newNotes;
 
       await detail.save();
 
@@ -120,7 +124,7 @@ export const updateSaleDetail = async (req, res) => {
          code: messages.HTTP_STATUS.OK.code,
          message: messages.x_updated_successfully.replace(
             "%{name}",
-            "Sale detail"
+            "Order detail"
          ),
          data: detail,
       });
@@ -129,12 +133,12 @@ export const updateSaleDetail = async (req, res) => {
    }
 };
 
-// Delete sale detail
-export const deleteSaleDetail = async (req, res) => {
+// Delete order detail
+export const deleteOrderDetail = async (req, res) => {
    try {
-      const { saleDetailId } = req.params;
+      const { orderDetailId } = req.params;
 
-      const detail = await SaleDetail.findByPk(saleDetailId);
+      const detail = await OrderDetail.findByPk(orderDetailId);
       if (!detail) {
          return res.status(messages.HTTP_STATUS.NOT_FOUND.code).json({
             code: messages.HTTP_STATUS.NOT_FOUND.code,
@@ -148,7 +152,7 @@ export const deleteSaleDetail = async (req, res) => {
          code: messages.HTTP_STATUS.OK.code,
          message: messages.x_deleted_successfully.replace(
             "%{name}",
-            "Sale detail"
+            "Order detail"
          ),
          data: detail,
       });

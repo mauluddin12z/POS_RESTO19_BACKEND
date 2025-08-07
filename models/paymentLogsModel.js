@@ -9,7 +9,7 @@ const paymentLogsModel = db.define(
          primaryKey: true,
          autoIncrement: true,
       },
-      saleId: {
+      orderId: {
          type: DataTypes.INTEGER,
          allowNull: false,
       },

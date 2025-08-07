@@ -13,12 +13,7 @@ import {
 import { Op } from "sequelize";
 
 // Utility: validate menu input fields
-const validateMenuInput = ({
-   menuName,
-   categoryId,
-   price,
-   stock,
-}) => {
+const validateMenuInput = ({ menuName, categoryId, price, stock }) => {
    const requiredFields = [
       { value: menuName, name: "Menu name" },
       { value: categoryId, name: "Category ID" },
@@ -54,7 +49,7 @@ export const getMenus = async (req, res) => {
       const maxP = parseFloat(maxPrice);
 
       // Allowed sort fields whitelist to avoid SQL errors or injection
-      const allowedSortFields = ["menuName", "price", "stock"];
+      const allowedSortFields = ["menuName", "price", "stock", "categoryId"];
       const sortField = allowedSortFields.includes(sortBy)
          ? sortBy
          : "menuName";
@@ -156,7 +151,6 @@ export const createMenu = async (req, res) => {
    try {
       const { menuName, menuDescription, categoryId, price, stock } = req.body;
       const imageFile = req.files ? req.files.menuImage : null;
-
       // Validate input fields
       const validationError = validateMenuInput({
          menuName,
@@ -236,6 +230,7 @@ export const updateMenu = async (req, res) => {
       const { menuId } = req.params;
       const { menuName, menuDescription, categoryId, price, stock } = req.body;
       const imageFile = req.files ? req.files.menuImage : null;
+      console.log(req);
 
       let menu = await Menu.findByPk(menuId);
       if (!menu) {

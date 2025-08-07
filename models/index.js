@@ -2,30 +2,30 @@ import db from "../config/database.js";
 import usersModel from "./usersModel.js";
 import categoriesModel from "./categoriesModel.js";
 import menusModel from "./menusModel.js";
-import salesModel from "./salesModel.js";
-import saleDetailsModel from "./saleDetailsModel.js";
+import ordersModel from "./ordersModel.js";
+import orderDetailsModel from "./orderDetailsModel.js";
 import paymentLogsModel from "./paymentLogsModel.js";
 
-// Users - Sales
-usersModel.hasMany(salesModel, { foreignKey: "userId" });
-salesModel.belongsTo(usersModel, { foreignKey: "userId" });
+// Users - Orders
+usersModel.hasMany(ordersModel, { foreignKey: "userId" });
+ordersModel.belongsTo(usersModel, { foreignKey: "userId" });
 
 // Categories - Menus
 categoriesModel.hasMany(menusModel, { foreignKey: "categoryId" });
 menusModel.belongsTo(categoriesModel, { foreignKey: "categoryId" });
 
 
-// Sales - SaleDetails
-salesModel.hasMany(saleDetailsModel, { foreignKey: "saleId" });
-saleDetailsModel.belongsTo(salesModel, { foreignKey: "saleId" });
+// Orders - OrderDetails
+ordersModel.hasMany(orderDetailsModel, { foreignKey: "orderId" });
+orderDetailsModel.belongsTo(ordersModel, { foreignKey: "orderId" });
 
-// Sales - PaymentLogs
-salesModel.hasOne(paymentLogsModel, { foreignKey: "saleId" });
-paymentLogsModel.belongsTo(salesModel, { foreignKey: "saleId" });
+// Orders - PaymentLogs
+ordersModel.hasOne(paymentLogsModel, { foreignKey: "orderId" });
+paymentLogsModel.belongsTo(ordersModel, { foreignKey: "orderId" });
 
-// Sales - SaleDetails
-menusModel.hasMany(saleDetailsModel, { foreignKey: "menuId" });
-saleDetailsModel.belongsTo(menusModel, { foreignKey: "menuId" });
+// Orders - OrdersDetails
+menusModel.hasMany(orderDetailsModel, { foreignKey: "menuId" });
+orderDetailsModel.belongsTo(menusModel, { foreignKey: "menuId" });
 
 // Export all the models
 export {
@@ -33,7 +33,7 @@ export {
    usersModel,
    categoriesModel,
    menusModel,
-   salesModel,
-   saleDetailsModel,
+   ordersModel,
+   orderDetailsModel,
    paymentLogsModel,
 };

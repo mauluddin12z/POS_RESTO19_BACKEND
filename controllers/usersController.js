@@ -1,6 +1,7 @@
 import Users from "../models/usersModel.js";
 import messages from "../utils/messages.js";
 import { handleServerError } from "../utils/errorHandler.js";
+import bcrypt from "bcrypt";
 
 // Get all users
 export const getUsers = async (req, res) => {

@@ -1,33 +1,29 @@
 import { DataTypes } from "sequelize";
 import db from "../config/database.js";
 
-const saleDetailsModel = db.define(
-   "saleDetails",
+const ordersModel = db.define(
+   "orders",
    {
-      saleDetailId: {
+      orderId: {
          type: DataTypes.INTEGER,
          primaryKey: true,
          autoIncrement: true,
       },
-      saleId: {
+      userId: {
          type: DataTypes.INTEGER,
          allowNull: false,
       },
-      menuId: {
+      total: {
          type: DataTypes.INTEGER,
          allowNull: false,
       },
-      quantity: {
-         type: DataTypes.INTEGER,
-         allowNull: false,
+      paymentMethod: {
+         type: DataTypes.STRING,
+         defaultValue: "CASH",
       },
-      price: {
-         type: DataTypes.INTEGER,
-         allowNull: false,
-      },
-      subtotal: {
-         type: DataTypes.INTEGER,
-         allowNull: false,
+      paymentStatus: {
+         type: DataTypes.STRING,
+         defaultValue: "unpaid",
       },
    },
    {
@@ -36,4 +32,4 @@ const saleDetailsModel = db.define(
    }
 );
 
-export default saleDetailsModel;
+export default ordersModel;

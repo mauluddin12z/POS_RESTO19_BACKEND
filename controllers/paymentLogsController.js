@@ -1,5 +1,5 @@
 import PaymentLog from "../models/paymentLogsModel.js";
-import Sale from "../models/salesModel.js";
+import Order from "../models/ordersModel.js";
 import messages from "../utils/messages.js";
 import { handleServerError } from "../utils/errorHandler.js";
 import { validateRequiredField } from "../utils/validation.js";
@@ -8,7 +8,7 @@ import { validateRequiredField } from "../utils/validation.js";
 export const getPaymentLogs = async (req, res) => {
    try {
       const logs = await PaymentLog.findAll({
-         include: [{ model: Sale }],
+         include: [{ model: Order }],
          order: [["paymentLogId", "DESC"]],
       });
 
@@ -28,7 +28,7 @@ export const getPaymentLogById = async (req, res) => {
       const { paymentLogId } = req.params;
 
       const log = await PaymentLog.findByPk(paymentLogId, {
-         include: [{ model: Sale }],
+         include: [{ model: Order }],
       });
 
       if (!log) {
@@ -51,25 +51,25 @@ export const getPaymentLogById = async (req, res) => {
 // Create a new payment log
 export const createPaymentLog = async (req, res) => {
    try {
-      const { saleId, amountPaid, changeReturned } = req.body;
+      const { orderId, amountPaid, changeReturned } = req.body;
 
       // Validate required fields
-      const saleIdError = validateRequiredField(saleId, "Sale ID");
+      const orderIdError = validateRequiredField(orderId, "Order ID");
       const amountPaidError = validateRequiredField(amountPaid, "Amount Paid");
       const changeReturnedError = validateRequiredField(
          changeReturned,
          "Change Returned"
       );
 
-      if (saleIdError || amountPaidError || changeReturnedError) {
+      if (orderIdError || amountPaidError || changeReturnedError) {
          return res.status(messages.HTTP_STATUS.BAD_REQUEST.code).json({
             code: messages.HTTP_STATUS.BAD_REQUEST.code,
-            message: saleIdError || amountPaidError || changeReturnedError,
+            message: orderIdError || amountPaidError || changeReturnedError,
          });
       }
 
       const log = await PaymentLog.create({
-         saleId,
+         orderId,
          amountPaid,
          changeReturned,
       });

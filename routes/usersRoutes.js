@@ -18,7 +18,7 @@ import { isSuperAdmin } from "../middlewares/authorizeRole.js";
 
 const router = express.Router();
 
-router.post("/register", registerUser);
+router.post("/register", verifyToken, registerUser);
 router.post("/login", loginUser);
 router.delete("/logout", verifyToken, logoutUser);
 router.get("/users", verifyToken, isSuperAdmin, getUsers);

@@ -9,8 +9,8 @@ dotenv.config();
 import "./models/index.js";
 import categoriesRoutes from "./routes/categoriesRoutes.js";
 import menusRoutes from "./routes/menusRoutes.js";
-import salesRoutes from "./routes/salesRoutes.js";
-import saleDetailsRoutes from "./routes/saleDetailsRoutes.js";
+import ordersRoutes from "./routes/ordersRoutes.js";
+import orderDetailsRoutes from "./routes/orderDetailsRoutes.js";
 import paymentLogsRoutes from "./routes/paymentLogsRoutes.js";
 import usersRoutes from "./routes/usersRoutes.js";
 
@@ -41,8 +41,8 @@ app.use(FileUpload());
 const version = "/v1";
 app.use(version, categoriesRoutes);
 app.use(version, menusRoutes);
-app.use(version, salesRoutes);
-app.use(version, saleDetailsRoutes);
+app.use(version, ordersRoutes);
+app.use(version, orderDetailsRoutes);
 app.use(version, paymentLogsRoutes);
 app.use(version, usersRoutes);
 
