@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize";
 import db from "../config/database.js";
-import { refreshToken } from "../controllers/authController.js";
 
 const usersModel = db.define(
    "users",

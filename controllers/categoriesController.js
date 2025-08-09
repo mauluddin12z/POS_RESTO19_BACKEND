@@ -2,20 +2,52 @@ import Category from "../models/categoriesModel.js";
 import messages from "../utils/messages.js";
 import { handleServerError } from "../utils/errorHandler.js";
 import { validateRequiredStringField } from "../utils/validation.js";
+import { Op } from "sequelize";
 
-// Get all categories
+// Get all categories with pagination and search
 export const getCategories = async (req, res) => {
    try {
-      const categories = await Category.findAll();
+      const { page = 1, pageSize = 10, searchQuery = "" } = req.query;
+
+      const pageNum = parseInt(page, 10);
+      const size = parseInt(pageSize, 10);
+
+      // Calculate offset
+      const offset = (pageNum - 1) * size;
+
+      // Build search condition
+      const searchCondition = searchQuery
+         ? {
+              categoryName: { [Op.like]: `%${searchQuery}%` }, // Search by categoryName, can add more fields if needed
+         }
+         : {};
+
+      const { count, rows: categories } = await Category.findAndCountAll({
+         where: searchCondition,  // Apply search condition
+         limit: size,
+         offset,
+      });
+
+      const totalPages = Math.ceil(count / size);
+      const hasNextPage = pageNum < totalPages;
+
       res.json({
          code: messages.HTTP_STATUS.OK.code,
          message: messages.HTTP_STATUS.OK.message,
          data: categories,
+         pagination: {
+            totalItems: count,
+            totalPages,
+            currentPage: pageNum,
+            pageSize: size,
+            hasNextPage,
+         },
       });
    } catch (error) {
       handleServerError(error, res);
    }
 };
+
 
 // Get a category by ID
 export const getCategoryById = async (req, res) => {
@@ -69,7 +101,7 @@ export const createCategory = async (req, res) => {
                code: messages.HTTP_STATUS.CONFLICT.code,
                message: messages.duplicate_name.replace(
                   "%{name}",
-                  categoryName
+                  "Category"
                ),
             });
          }
@@ -82,7 +114,7 @@ export const createCategory = async (req, res) => {
          code: messages.HTTP_STATUS.CREATED.code,
          message: messages.x_created_successfully.replace(
             "%{name}",
-            "Categories"
+            "Category"
          ),
          data: createdCategories,
       });

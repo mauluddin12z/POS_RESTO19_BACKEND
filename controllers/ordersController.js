@@ -6,6 +6,7 @@ import Menu from "../models/menusModel.js";
 import Category from "../models/categoriesModel.js";
 import { handleServerError } from "../utils/errorHandler.js";
 import { validateRequiredField } from "../utils/validation.js"; // assumed utility
+import { Op } from "sequelize";
 
 // Get all Orders
 export const getOrders = async (req, res) => {
@@ -21,6 +22,10 @@ export const getOrders = async (req, res) => {
          pageSize = 10,
          sortBy = "createdAt",
          sortOrder = "DESC",
+         dateRange,
+         fromDate,
+         toDate,
+         paymentStatus,
       } = req.query;
 
       const pageNum = parseInt(page, 10);
@@ -28,8 +33,13 @@ export const getOrders = async (req, res) => {
       const minT = parseFloat(minTotal);
       const maxT = parseFloat(maxTotal);
 
-      // Allowed sort fields whitelist to avoid SQL errors or injection
-      const allowedSortFields = ["createdAt", "total", "paymentMethod", "paymentStatus"];
+      // Allowed sort fields whitelist
+      const allowedSortFields = [
+         "createdAt",
+         "total",
+         "paymentMethod",
+         "paymentStatus",
+      ];
       const sortField = allowedSortFields.includes(sortBy)
          ? sortBy
          : "createdAt";
@@ -41,19 +51,61 @@ export const getOrders = async (req, res) => {
       if (userId) {
          filter["$user.userId$"] = userId;
       }
+
       if (username) {
-         filter["$user.name$"] = { [Op.like]: `%${username}%` };
+         filter["$user.name$"] = {
+            [Op.like]: `%${username}%`,
+         };
       }
+
       if (!isNaN(minT) || !isNaN(maxT)) {
          filter.total = {};
          if (!isNaN(minT)) filter.total[Op.gte] = minT;
          if (!isNaN(maxT)) filter.total[Op.lte] = maxT;
       }
+
       if (paymentMethod) {
          filter.paymentMethod = paymentMethod;
       }
 
-      // Build search condition
+      if (paymentStatus && ["paid", "unpaid"].includes(paymentStatus)) {
+         filter.paymentStatus = paymentStatus;
+      }
+
+      // Handle time-based filtering
+      const dateFilter = {};
+      const now = new Date();
+
+      if (dateRange === "today") {
+         const start = new Date(now.setHours(0, 0, 0, 0));
+         const end = new Date(now.setHours(23, 59, 59, 999));
+         dateFilter.createdAt = { [Op.between]: [start, end] };
+      } else if (dateRange === "thisMonth") {
+         const start = new Date(now.getFullYear(), now.getMonth(), 1);
+         const end = new Date(
+            now.getFullYear(),
+            now.getMonth() + 1,
+            0,
+            23,
+            59,
+            59,
+            999
+         );
+         dateFilter.createdAt = { [Op.between]: [start, end] };
+      } else if (dateRange === "thisYear") {
+         const start = new Date(now.getFullYear(), 0, 1);
+         const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+         dateFilter.createdAt = { [Op.between]: [start, end] };
+      }
+
+      // Handle custom fromDate and toDate
+      if (fromDate || toDate) {
+         if (!dateFilter.createdAt) dateFilter.createdAt = {};
+         if (fromDate) dateFilter.createdAt[Op.gte] = new Date(fromDate);
+         if (toDate) dateFilter.createdAt[Op.lte] = new Date(toDate);
+      }
+
+      // Search condition
       const searchCondition = searchQuery
          ? {
               [Op.or]: [
@@ -81,7 +133,13 @@ export const getOrders = async (req, res) => {
             },
             {
                model: OrderDetail,
-               attributes: ["orderDetailId", "quantity", "price", "subtotal", "notes"],
+               attributes: [
+                  "orderDetailId",
+                  "quantity",
+                  "price",
+                  "subtotal",
+                  "notes",
+               ],
                include: [
                   {
                      model: Menu,
@@ -90,6 +148,7 @@ export const getOrders = async (req, res) => {
                         "menuName",
                         "menuDescription",
                         "price",
+                        "stock"
                      ],
                      include: {
                         model: Category,
@@ -102,10 +161,12 @@ export const getOrders = async (req, res) => {
          where: {
             ...filter,
             ...searchCondition,
+            ...dateFilter,
          },
          order: [[sortField, orderDirection]],
          limit: size,
          offset,
+         distinct: true,
       });
 
       const totalPages = Math.ceil(count / size);

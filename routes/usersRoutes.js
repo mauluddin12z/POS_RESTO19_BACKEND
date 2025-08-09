@@ -28,5 +28,4 @@ router.post("/user", verifyToken, isSuperAdmin, createUser);
 router.post("/token", refreshToken);
 router.patch("/user/:userId", verifyToken, isSuperAdmin, updateUser);
 router.delete("/user/:userId", verifyToken, isSuperAdmin, deleteUser);
-
 export default router;

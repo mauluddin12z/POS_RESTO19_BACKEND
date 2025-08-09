@@ -12,7 +12,7 @@ export const getOrderDetails = async (req, res) => {
       const orderDetails = await OrderDetail.findAll({
          include: [
             { model: Order },
-            { model: Menu, attributes: ["menuId", "name", "price"] },
+            { model: Menu, attributes: ["menuId", "menuName", "price"] },
          ],
          order: [["orderDetailId", "DESC"]],
       });
@@ -32,7 +32,7 @@ export const getOrderDetailById = async (req, res) => {
    try {
       const { orderDetailId } = req.params;
       const detail = await OrderDetail.findByPk(orderDetailId, {
-         include: [{ model: Menu, attributes: ["menuId", "name", "price"] }],
+         include: [{ model: Menu, attributes: ["menuId", "menuName", "price"] }],
       });
 
       if (!detail) {
@@ -56,6 +56,7 @@ export const getOrderDetailById = async (req, res) => {
 export const createOrderDetail = async (req, res) => {
    try {
       const { orderId, menuId, quantity, price, notes } = req.body;
+      console.log(req.body)
 
       // Validate required fields
       const orderIdError = validateRequiredField(orderId, "Order ID");
@@ -155,6 +156,36 @@ export const deleteOrderDetail = async (req, res) => {
             "Order detail"
          ),
          data: detail,
+      });
+   } catch (error) {
+      handleServerError(error, res);
+   }
+};
+
+// Delete all order details by orderId
+export const deleteOrderDetailsByOrderId = async (req, res) => {
+   try {
+      const { orderId } = req.params;
+
+      // Find all details for the order
+      const details = await OrderDetail.findAll({ where: { orderId } });
+
+      if (!details.length) {
+         return res.status(messages.HTTP_STATUS.NOT_FOUND.code).json({
+            code: messages.HTTP_STATUS.NOT_FOUND.code,
+            message: "No order details found for this order.",
+         });
+      }
+
+      // Bulk delete
+      await OrderDetail.destroy({ where: { orderId } });
+
+      return res.status(messages.HTTP_STATUS.OK.code).json({
+         code: messages.HTTP_STATUS.OK.code,
+         message: messages.x_deleted_successfully.replace(
+            "%{name}",
+            "Order details"
+         ),
       });
    } catch (error) {
       handleServerError(error, res);

@@ -17,7 +17,7 @@ import usersRoutes from "./routes/usersRoutes.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = ["http://192.168.0.101:3000"];
+const allowedOrigins = ["http://192.168.0.105:3000"];
 app.use(
    cors({
       credentials: true,
