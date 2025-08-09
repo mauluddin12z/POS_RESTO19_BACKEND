@@ -8,7 +8,7 @@ dotenv.config();
 const db = new Sequelize(process.env.MYSQL_URI, {
    dialect: "mysql",
    timezone: "+07:00",
-   dialectModule: mysql2,  // Use the imported mysql2 module
+   dialectModule: mysql2,
 });
 
 
