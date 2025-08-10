@@ -11,12 +11,9 @@ const db = new Sequelize(process.env.MYSQL_URI, {
    dialectModule: mysql2,
 });
 
-
 export default db;
 
-// import { Sequelize } from "sequelize";
-
-// const db = new Sequelize("resto_19", "root", "", {
+// const db = new Sequelize("resto_19_test", "root", "", {
 //    host: "localhost",
 //    dialect: "mysql",
 //    timezone: "+07:00",

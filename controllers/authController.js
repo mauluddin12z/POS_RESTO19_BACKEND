@@ -1,7 +1,6 @@
 import Users from "../models/usersModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import messages from "../utils/messages.js";
 import { handleServerError } from "../utils/errorHandler.js";
 import dotenv from "dotenv";
 import cookie from "cookie";
@@ -90,17 +89,19 @@ export const loginUser = async (req, res) => {
          // Access Token
          cookie.serialize("accessToken", accessToken, {
             httpOnly: true,
-            secure: req.secure || false,
-            maxAge: 60 * 60, // 1 hour
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 60 * 60,
             path: "/",
+            sameSite: "strict",
          }),
 
          // Refresh Token
          cookie.serialize("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: req.secure || false,
-            maxAge: 60 * 60 * 24 * 30, // 30 days
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 60 * 60 * 24 * 30,
             path: "/",
+            sameSite: "strict",
          }),
       ]);
 
@@ -133,15 +134,17 @@ export const logoutUser = async (req, res) => {
       res.setHeader("Set-Cookie", [
          cookie.serialize("accessToken", "", {
             httpOnly: true,
-            secure: req.secure || false,
+            secure: process.env.NODE_ENV === "production",
             maxAge: 0,
             path: "/",
+            sameSite: "strict",
          }),
          cookie.serialize("refreshToken", "", {
             httpOnly: true,
-            secure: req.secure || false,
+            secure: process.env.NODE_ENV === "production",
             maxAge: 0,
             path: "/",
+            sameSite: "strict",
          }),
       ]);
 
@@ -174,15 +177,17 @@ export const refreshToken = async (req, res) => {
          res.setHeader("Set-Cookie", [
             cookie.serialize("accessToken", "", {
                httpOnly: true,
-               secure: req.secure || false,
+               secure: process.env.NODE_ENV === "production",
                maxAge: 0,
                path: "/",
+               sameSite: "strict",
             }),
             cookie.serialize("refreshToken", "", {
                httpOnly: true,
-               secure: req.secure || false,
+               secure: process.env.NODE_ENV === "production",
                maxAge: 0,
                path: "/",
+               sameSite: "strict",
             }),
          ]);
          return res.status(403).json({ message: "Invalid refresh token" });
@@ -199,9 +204,10 @@ export const refreshToken = async (req, res) => {
          "Set-Cookie",
          cookie.serialize("accessToken", newAccessToken, {
             httpOnly: true,
-            secure: req.secure || false,
+            secure: process.env.NODE_ENV === "production",
             maxAge: 3600,
             path: "/",
+            sameSite: "strict",
          })
       );
 
