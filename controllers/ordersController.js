@@ -148,7 +148,8 @@ export const getOrders = async (req, res) => {
                         "menuName",
                         "menuDescription",
                         "price",
-                        "stock"
+                        "stock",
+                        "menuImageUrl",
                      ],
                      include: {
                         model: Category,
