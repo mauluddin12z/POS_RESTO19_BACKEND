@@ -13,10 +13,17 @@ dotenv.config();
 
 // export default db;
 
-const db = new Sequelize("resto_19_test", "root", "", {
-   host: "localhost",
-   dialect: "mysql",
-   timezone: "+07:00",
-});
+
+const db = new Sequelize(
+   process.env.DB_NAME || "resto_19_test",
+   process.env.DB_USER || "root",
+   process.env.DB_PASS || "",
+   {
+      host: process.env.DB_HOST || "localhost",
+      dialect: process.env.DB_DIALECT || "mysql",
+      timezone: process.env.DB_TIMEZONE || "+07:00",
+      dialectModule: mysql2,
+   }
+);
 
 export default db;
