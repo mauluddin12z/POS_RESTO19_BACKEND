@@ -89,7 +89,7 @@ export const loginUser = async (req, res) => {
          // Access Token
          cookie.serialize("accessToken", accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             maxAge: 60 * 60,
             path: "/",
             sameSite: "none",
@@ -98,7 +98,7 @@ export const loginUser = async (req, res) => {
          // Refresh Token
          cookie.serialize("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             maxAge: 60 * 60 * 24 * 30,
             path: "/",
             sameSite: "none",
@@ -134,14 +134,14 @@ export const logoutUser = async (req, res) => {
       res.setHeader("Set-Cookie", [
          cookie.serialize("accessToken", "", {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             maxAge: 0,
             path: "/",
             sameSite: "none",
          }),
          cookie.serialize("refreshToken", "", {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             maxAge: 0,
             path: "/",
             sameSite: "none",
@@ -177,14 +177,14 @@ export const refreshToken = async (req, res) => {
          res.setHeader("Set-Cookie", [
             cookie.serialize("accessToken", "", {
                httpOnly: true,
-               secure: process.env.NODE_ENV === "production",
+               secure: false,
                maxAge: 0,
                path: "/",
                sameSite: "none",
             }),
             cookie.serialize("refreshToken", "", {
                httpOnly: true,
-               secure: process.env.NODE_ENV === "production",
+               secure: false,
                maxAge: 0,
                path: "/",
                sameSite: "none",
@@ -204,7 +204,7 @@ export const refreshToken = async (req, res) => {
          "Set-Cookie",
          cookie.serialize("accessToken", newAccessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             maxAge: 3600,
             path: "/",
             sameSite: "none",
