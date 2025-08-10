@@ -92,7 +92,7 @@ export const loginUser = async (req, res) => {
             secure: process.env.NODE_ENV === "production",
             maxAge: 60 * 60,
             path: "/",
-            sameSite: "strict",
+            sameSite: "none",
          }),
 
          // Refresh Token
@@ -101,7 +101,7 @@ export const loginUser = async (req, res) => {
             secure: process.env.NODE_ENV === "production",
             maxAge: 60 * 60 * 24 * 30,
             path: "/",
-            sameSite: "strict",
+            sameSite: "none",
          }),
       ]);
 
@@ -137,14 +137,14 @@ export const logoutUser = async (req, res) => {
             secure: process.env.NODE_ENV === "production",
             maxAge: 0,
             path: "/",
-            sameSite: "strict",
+            sameSite: "none",
          }),
          cookie.serialize("refreshToken", "", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             maxAge: 0,
             path: "/",
-            sameSite: "strict",
+            sameSite: "none",
          }),
       ]);
 
@@ -180,14 +180,14 @@ export const refreshToken = async (req, res) => {
                secure: process.env.NODE_ENV === "production",
                maxAge: 0,
                path: "/",
-               sameSite: "strict",
+               sameSite: "none",
             }),
             cookie.serialize("refreshToken", "", {
                httpOnly: true,
                secure: process.env.NODE_ENV === "production",
                maxAge: 0,
                path: "/",
-               sameSite: "strict",
+               sameSite: "none",
             }),
          ]);
          return res.status(403).json({ message: "Invalid refresh token" });
@@ -207,7 +207,7 @@ export const refreshToken = async (req, res) => {
             secure: process.env.NODE_ENV === "production",
             maxAge: 3600,
             path: "/",
-            sameSite: "strict",
+            sameSite: "none",
          })
       );
 
