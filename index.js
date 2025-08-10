@@ -49,6 +49,6 @@ app.use(version, orderDetailsRoutes);
 app.use(version, paymentLogsRoutes);
 app.use(version, usersRoutes);
 
-app.listen(PORT, () =>
+app.listen(PORT, "0.0.0.0", () =>
    console.log(`Server is now up and running at http://localhost:${PORT}`)
 );
