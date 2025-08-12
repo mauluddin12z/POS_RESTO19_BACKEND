@@ -21,6 +21,7 @@ const allowedOrigins = [
    "https://pos-resto-19-frontend.vercel.app",
    "http://192.168.0.105:3000",
    "http://103.226.138.140:3000",
+   "https://restoandcafepempek19.my.id",
 ];
 app.use(
    cors({
