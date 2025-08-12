@@ -92,7 +92,7 @@ export const loginUser = async (req, res) => {
             secure: process.env.NODE_ENV === "production",
             maxAge: 60 * 60,
             path: "/",
-            sameSite:"strict"
+            sameSite:"lax"
          }),
 
          // Refresh Token
@@ -101,7 +101,7 @@ export const loginUser = async (req, res) => {
             secure: process.env.NODE_ENV === "production",
             maxAge: 60 * 60 * 24 * 30,
             path: "/",
-            sameSite:"strict"
+            sameSite:"lax"
          }),
       ]);
 
@@ -137,14 +137,14 @@ export const logoutUser = async (req, res) => {
             secure: process.env.NODE_ENV === "production",
             maxAge: 0,
             path: "/",
-            sameSite:"strict"
+            sameSite:"lax"
          }),
          cookie.serialize("refreshToken", "", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             maxAge: 0,
             path: "/",
-            sameSite:"strict"
+            sameSite:"lax"
          }),
       ]);
 
@@ -180,7 +180,7 @@ export const refreshToken = async (req, res) => {
                secure: process.env.NODE_ENV === "production",
                maxAge: 0,
                path: "/",
-               sameSite:"strict"
+               sameSite:"lax"
 
             }),
             cookie.serialize("refreshToken", "", {
@@ -188,7 +188,7 @@ export const refreshToken = async (req, res) => {
                secure: process.env.NODE_ENV === "production",
                maxAge: 0,
                path: "/",
-               sameSite:"strict"
+               sameSite:"lax"
 
             }),
          ]);
@@ -209,7 +209,7 @@ export const refreshToken = async (req, res) => {
             secure: process.env.NODE_ENV === "production",
             maxAge: 3600,
             path: "/",
-            sameSite:"strict"
+            sameSite:"lax"
          })
       );
 
