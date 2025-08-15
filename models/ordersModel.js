@@ -19,7 +19,6 @@ const ordersModel = db.define(
       },
       paymentMethod: {
          type: DataTypes.STRING,
-         defaultValue: "CASH",
       },
       paymentStatus: {
          type: DataTypes.STRING,
