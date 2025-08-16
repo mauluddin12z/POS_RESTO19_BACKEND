@@ -1,5 +1,7 @@
 import Menu from "../models/menusModel.js";
 import Category from "../models/categoriesModel.js";
+import Order from "../models/ordersModel.js";
+import OrderDetail from "../models/orderDetailsModel.js";
 import messages from "../utils/messages.js";
 import { handleServerError } from "../utils/errorHandler.js";
 import {
@@ -10,7 +12,7 @@ import {
    validateImageUpload,
    validateRequiredStringField,
 } from "../utils/validation.js";
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 
 // Utility: validate menu input fields
 const validateMenuInput = ({ menuName, categoryId, price, stock }) => {
@@ -41,14 +43,16 @@ export const getMenus = async (req, res) => {
          pageSize = 10,
          sortBy = "menuName",
          sortOrder = "ASC",
+         mostOrdered = "false",
       } = req.query;
 
       const pageNum = parseInt(page, 10);
       const size = parseInt(pageSize, 10);
       const minP = parseFloat(minPrice);
       const maxP = parseFloat(maxPrice);
+      const mostOrderedBool = mostOrdered.toLowerCase() === "true";
 
-      // Allowed sort fields whitelist to avoid SQL errors or injection
+      // Allowed sort fields whitelist
       const allowedSortFields = ["menuName", "price", "stock", "categoryId"];
       const sortField = allowedSortFields.includes(sortBy)
          ? sortBy
@@ -74,7 +78,6 @@ export const getMenus = async (req, res) => {
          if (!isNaN(maxP)) filter.price[Op.lte] = maxP;
       }
 
-      // Build search condition
       const searchCondition = searchQuery
          ? {
               [Op.or]: [
@@ -86,24 +89,60 @@ export const getMenus = async (req, res) => {
 
       const offset = (pageNum - 1) * size;
 
+      // Build ordering logic
+      const order = [];
+
+      // Always push menus with stock = 0 to the end first
+      order.push([Sequelize.literal("stock = 0"), "ASC"]);
+
+      // Then apply your main sort
+      if (mostOrderedBool) {
+         order.push([Sequelize.literal("orderCount"), orderDirection]);
+      } else {
+         order.push([sortField, orderDirection]);
+      }
+
+      // Always push menus with stock = 0 to the end
+      order.push([Sequelize.literal("stock = 0"), "ASC"]);
+
       const { count, rows: menus } = await Menu.findAndCountAll({
+         attributes: {
+            include: mostOrderedBool
+               ? [
+                    [
+                       Sequelize.fn(
+                          "SUM",
+                          Sequelize.col("OrderDetails.quantity")
+                       ),
+                       "orderCount",
+                    ],
+                 ]
+               : [],
+         },
          include: [
             {
                model: Category,
                attributes: { exclude: ["createdAt", "updatedAt"] },
+            },
+            {
+               model: OrderDetail,
+               attributes: [],
+               required: mostOrderedBool,
             },
          ],
          where: {
             ...filter,
             ...searchCondition,
          },
-         order: [[sortField, orderDirection]],
+         group: ["menus.menuId", "category.categoryId"],
+         order,
          limit: size,
          offset,
          subQuery: false,
+         distinct: true,
       });
 
-      const totalPages = Math.ceil(count / size);
+      const totalPages = Math.ceil(count.length / size);
       const hasNextPage = pageNum < totalPages;
 
       res.json({
@@ -111,7 +150,7 @@ export const getMenus = async (req, res) => {
          message: messages.HTTP_STATUS.OK.message,
          data: menus,
          pagination: {
-            totalItems: count,
+            totalItems: count.length,
             totalPages,
             currentPage: pageNum,
             pageSize: size,
