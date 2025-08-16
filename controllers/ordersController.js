@@ -7,6 +7,7 @@ import Category from "../models/categoriesModel.js";
 import { handleServerError } from "../utils/errorHandler.js";
 import { validateRequiredField } from "../utils/validation.js"; // assumed utility
 import { Op } from "sequelize";
+import { DateTime } from "luxon";
 
 // Get all Orders
 export const getOrders = async (req, res) => {
@@ -74,35 +75,38 @@ export const getOrders = async (req, res) => {
 
       // Handle time-based filtering
       const dateFilter = {};
-      const now = new Date();
+
+      const nowWIB = DateTime.now().setZone("Asia/Jakarta");
 
       if (dateRange === "today") {
-         const start = new Date(now.setHours(0, 0, 0, 0));
-         const end = new Date(now.setHours(23, 59, 59, 999));
+         const start = nowWIB.startOf("day").toUTC().toJSDate();
+         const end = nowWIB.endOf("day").toUTC().toJSDate();
          dateFilter.createdAt = { [Op.between]: [start, end] };
       } else if (dateRange === "thisMonth") {
-         const start = new Date(now.getFullYear(), now.getMonth(), 1);
-         const end = new Date(
-            now.getFullYear(),
-            now.getMonth() + 1,
-            0,
-            23,
-            59,
-            59,
-            999
-         );
+         const start = nowWIB.startOf("month").toUTC().toJSDate();
+         const end = nowWIB.endOf("month").toUTC().toJSDate();
          dateFilter.createdAt = { [Op.between]: [start, end] };
       } else if (dateRange === "thisYear") {
-         const start = new Date(now.getFullYear(), 0, 1);
-         const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+         const start = nowWIB.startOf("year").toUTC().toJSDate();
+         const end = nowWIB.endOf("year").toUTC().toJSDate();
          dateFilter.createdAt = { [Op.between]: [start, end] };
       }
 
       // Handle custom fromDate and toDate
       if (fromDate || toDate) {
          if (!dateFilter.createdAt) dateFilter.createdAt = {};
-         if (fromDate) dateFilter.createdAt[Op.gte] = new Date(fromDate);
-         if (toDate) dateFilter.createdAt[Op.lte] = new Date(toDate);
+         if (fromDate) {
+            const from = DateTime.fromISO(fromDate, { zone: "Asia/Jakarta" })
+               .toUTC()
+               .toJSDate();
+            dateFilter.createdAt[Op.gte] = from;
+         }
+         if (toDate) {
+            const to = DateTime.fromISO(toDate, { zone: "Asia/Jakarta" })
+               .toUTC()
+               .toJSDate();
+            dateFilter.createdAt[Op.lte] = to;
+         }
       }
 
       // Search condition
