@@ -1,6 +1,5 @@
 import Menu from "../models/menusModel.js";
 import Category from "../models/categoriesModel.js";
-import Order from "../models/ordersModel.js";
 import OrderDetail from "../models/orderDetailsModel.js";
 import messages from "../utils/messages.js";
 import { handleServerError } from "../utils/errorHandler.js";
@@ -109,7 +108,7 @@ export const getMenus = async (req, res) => {
                     [
                        Sequelize.fn(
                           "SUM",
-                          Sequelize.col("OrderDetails.quantity")
+                          Sequelize.col("orderDetails.quantity")
                        ),
                        "orderCount",
                     ],
