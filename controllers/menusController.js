@@ -102,9 +102,6 @@ export const getMenus = async (req, res) => {
          order.push([sortField, orderDirection]);
       }
 
-      // Always push menus with stock = 0 to the end
-      order.push([Sequelize.literal("stock = 0"), "ASC"]);
-
       const { count, rows: menus } = await Menu.findAndCountAll({
          attributes: {
             include: mostOrderedBool
