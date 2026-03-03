@@ -8,6 +8,7 @@ dotenv.config();
 
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+const isProduction = process.env.NODE_ENV === "production";
 
 
 // Helper to generate access token
@@ -87,22 +88,21 @@ export const loginUser = async (req, res) => {
 
       // Set the access and refresh tokens in HTTP-only cookies
       res.setHeader("Set-Cookie", [
-         // Access Token
          cookie.serialize("accessToken", accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: isProduction,
             maxAge: 60 * 60,
             path: "/",
-            sameSite:"lax"
+            sameSite: isProduction ? "none" : "lax",
+            domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
          }),
-
-         // Refresh Token
          cookie.serialize("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: isProduction,
             maxAge: 60 * 60 * 24 * 30,
             path: "/",
-            sameSite:"lax"
+            sameSite: isProduction ? "none" : "lax",
+            domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
          }),
       ]);
 
@@ -135,17 +135,19 @@ export const logoutUser = async (req, res) => {
       res.setHeader("Set-Cookie", [
          cookie.serialize("accessToken", "", {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 0,
+            secure: isProduction,
+            maxAge: 60 * 60,
             path: "/",
-            sameSite:"lax"
+            sameSite: isProduction ? "none" : "lax",
+            domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
          }),
          cookie.serialize("refreshToken", "", {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 0,
+            secure: isProduction,
+            maxAge: 60 * 60,
             path: "/",
-            sameSite:"lax"
+            sameSite: isProduction ? "none" : "lax",
+            domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
          }),
       ]);
 
@@ -178,10 +180,11 @@ export const refreshToken = async (req, res) => {
          res.setHeader("Set-Cookie", [
             cookie.serialize("accessToken", "", {
                httpOnly: true,
-               secure: process.env.NODE_ENV === "production",
-               maxAge: 0,
+               secure: isProduction,
+               maxAge: 60 * 60,
                path: "/",
-               sameSite:"lax"
+               sameSite: isProduction ? "none" : "lax",
+               domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
 
             }),
             cookie.serialize("refreshToken", "", {
@@ -189,7 +192,7 @@ export const refreshToken = async (req, res) => {
                secure: process.env.NODE_ENV === "production",
                maxAge: 0,
                path: "/",
-               sameSite:"lax"
+               sameSite: "lax"
 
             }),
          ]);
@@ -207,10 +210,11 @@ export const refreshToken = async (req, res) => {
          "Set-Cookie",
          cookie.serialize("accessToken", newAccessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 3600,
+            secure: isProduction,
+            maxAge: 60 * 60,
             path: "/",
-            sameSite:"lax"
+            sameSite: isProduction ? "none" : "lax",
+            domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
          })
       );
 

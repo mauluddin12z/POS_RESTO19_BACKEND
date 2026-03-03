@@ -27,6 +27,7 @@ app.use(
       origin: allowedOrigins,
    })
 );
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(FileUpload());
