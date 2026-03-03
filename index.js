@@ -17,12 +17,10 @@ import usersRoutes from "./routes/usersRoutes.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = [
-   "https://pos-resto-19-frontend.vercel.app",
-   "http://192.168.0.105:3000",
-   "http://103.226.138.140:3000",
-   "https://restoandcafepempek19.my.id",
-];
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+   ? process.env.ALLOWED_ORIGINS.split(",")
+   : [];
+
 app.use(
    cors({
       credentials: true,
