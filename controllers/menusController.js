@@ -265,7 +265,6 @@ export const updateMenu = async (req, res) => {
       const { menuId } = req.params;
       const { menuName, menuDescription, categoryId, price, stock } = req.body;
       const imageFile = req.files ? req.files.menuImage : null;
-      console.log(req);
 
       let menu = await Menu.findByPk(menuId);
       if (!menu) {

@@ -14,7 +14,7 @@ const router = express.Router();
 router.get("/menus", verifyToken, getMenus);
 router.get("/menu/:menuId", verifyToken, getMenuById);
 router.post("/menu", verifyToken, createMenu);
-router.patch("/menu/:menuId", verifyToken, updateMenu);
-router.delete("/menu/:menuId", verifyToken, deleteMenu);
+router.patch("/menu/:menuId", verifyToken, isSuperAdmin, updateMenu);
+router.delete("/menu/:menuId", verifyToken, isSuperAdmin, deleteMenu);
 
 export default router;
