@@ -1,0 +1,374 @@
+openapi: 3.0.3
+
+info:
+  title: POS Restaurant
+  version: 1.0.0
+  description: |
+    Production-ready API for Users, Auth, Orders, Menus, Categories, and Order Details.
+
+servers:
+  - url: http://localhost:3000/api/v1
+
+# =========================
+# SECURITY SCHEME
+# =========================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    User:
+      type: object
+      properties:
+        userId:
+          type: integer
+        name:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+
+    AuthLogin:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    AuthRegister:
+      type: object
+      required: [name, username, password, role]
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+
+    Menu:
+      type: object
+      properties:
+        menuId:
+          type: integer
+        menuName:
+          type: string
+        price:
+          type: number
+        stock:
+          type: integer
+        categoryId:
+          type: integer
+
+    Order:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        userId:
+          type: integer
+        total:
+          type: number
+        paymentMethod:
+          type: string
+        paymentStatus:
+          type: string
+
+    OrderDetail:
+      type: object
+      properties:
+        orderDetailId:
+          type: integer
+        orderId:
+          type: integer
+        menuId:
+          type: integer
+        quantity:
+          type: integer
+        price:
+          type: number
+        subtotal:
+          type: number
+
+    Category:
+      type: object
+      properties:
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+
+security:
+  - bearerAuth: []
+
+# =========================
+# ROUTES
+# =========================
+paths:
+
+  # =========================
+  # AUTH
+  # =========================
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegister'
+      responses:
+        "201":
+          description: User created
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLogin'
+      responses:
+        "200":
+          description: Login success
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout user
+      responses:
+        "200":
+          description: Logout success
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Refresh access token (uses cookie)
+      responses:
+        "200":
+          description: Token refreshed
+        "401":
+          description: Missing refresh token
+
+  # =========================
+  # USERS
+  # =========================
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Get all users
+      parameters:
+        - in: query
+          name: searchQuery
+          schema:
+            type: string
+        - in: query
+          name: role
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+
+    post:
+      tags: [Users]
+      summary: Create user (Admin only recommended)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegister'
+      responses:
+        "201":
+          description: Created
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Success
+
+    put:
+      tags: [Users]
+      summary: Update user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated
+
+    delete:
+      tags: [Users]
+      summary: Delete user
+      responses:
+        "200":
+          description: Deleted
+
+  # =========================
+  # MENUS
+  # =========================
+
+  /menus:
+    get:
+      tags: [Menus]
+      summary: Get menus
+      parameters:
+        - in: query
+          name: searchQuery
+          schema:
+            type: string
+        - in: query
+          name: sort
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+
+    post:
+      tags: [Menus]
+      summary: Create menu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Menu'
+      responses:
+        "201":
+          description: Created
+
+  # =========================
+  # ORDERS
+  # =========================
+
+  /orders:
+    get:
+      tags: [Orders]
+      summary: Get orders
+      responses:
+        "200":
+          description: Success
+
+    post:
+      tags: [Orders]
+      summary: Create order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+                paymentMethod:
+                  type: string
+                orderDetails:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      menuId:
+                        type: integer
+                      quantity:
+                        type: integer
+      responses:
+        "201":
+          description: Created
+
+  # =========================
+  # CATEGORIES
+  # =========================
+
+  /categories:
+    get:
+      tags: [Categories]
+      summary: Get categories
+      responses:
+        "200":
+          description: Success
+
+    post:
+      tags: [Categories]
+      summary: Create category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+      responses:
+        "201":
+          description: Created
+
+  # =========================
+  # ORDER DETAILS
+  # =========================
+
+  /order-details:
+    get:
+      tags: [OrderDetails]
+      summary: Get order details
+      responses:
+        "200":
+          description: Success
+
+    post:
+      tags: [OrderDetails]
+      summary: Create order detail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderDetail'
+      responses:
+        "201":
+          description: Created
