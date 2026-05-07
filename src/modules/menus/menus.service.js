@@ -208,7 +208,7 @@ export const updateMenu = async (menuId, data, imageData) => {
          };
       }
 
-      // Duplicate check (basic safety, DB UNIQUE still required)
+      // Duplicate check
       if (menuName && menuName.trim() !== menu.menuName) {
          const existingMenu = await Menu.findOne({
             where: { menuName: menuName.trim() },
@@ -221,11 +221,8 @@ export const updateMenu = async (menuId, data, imageData) => {
                message: messages.duplicate_name.replace("%{name}", "Menu"),
             };
          }
-
-         menu.menuName = menuName.trim();
       }
 
-      // Image upload first (outside mutation risk)
       let newImageUrl = null;
 
       if (imageFile) {
@@ -245,16 +242,25 @@ export const updateMenu = async (menuId, data, imageData) => {
          );
       }
 
-      // Apply image inside transaction
+      // Build update payload
+      const updatePayload = {
+         ...data,
+      };
+
+      if (menuName) {
+         updatePayload.menuName = menuName.trim();
+      }
+
       if (newImageUrl) {
          if (menu.menuImageUrl) {
             await deleteImageFromCloudinary(menu.menuImageUrl);
          }
 
-         menu.menuImageUrl = newImageUrl;
+         updatePayload.menuImageUrl = newImageUrl;
       }
 
-      await menu.update(data, { transaction: t });
+      // Single source of truth update
+      await menu.update(updatePayload, { transaction: t });
 
       await t.commit();
 
